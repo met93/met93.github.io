@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SLOT KOYAN V3 - MET93</title>
+<style>
+body{background:#0f0f0f;color:white;text-align:center;font-family:Arial;padding:15px}
+h1{color:gold;margin:5px}
+.box{background:#222;padding:20px;border-radius:20px;max-width:400px;margin:auto;border:2px solid gold}
+.slot{font-size:50px;background:white;border-radius:15px;padding:15px;margin:10px 0;min-height:70px}
+button{background:gold;border:none;padding:13px 25px;border-radius:30px;font-size:18px;font-weight:bold;margin:5px;cursor:pointer}
+.btn-green{background:#00ff88}.btn-red{background:#ff4444;color:white}
+.btn-blue{background:#00ccff}
+#koin{font-size:22px;color:#00ff88;font-weight:bold}
+#level{color:gold;font-weight:bold}
+.bar{background:#333;height:12px;border-radius:10px;overflow:hidden}
+#xpbar{background:gold;height:100%;width:0%;transition:0.3s}
+.stat{display:flex;justify-content:space-between;font-size:14px;color:#aaa}
+.spinning{animation:shake 0.1s infinite}
+@keyframes shake{0%{transform:translateX(0)}25%{transform:translateX(-2px)}75%{transform:translateX(2px)}}
+</style>
+</head>
+<body>
+<h1>🎰 SLOT KOYAN V3 🎰</h1>
+<p id="koin">💰 Koin: 1000</p>
+<p id="level">⭐ LEVEL 1 - PEMULA</p>
+<div class="box">
+<div class="stat"><span>XP</span><span id="xptext">0 / 100</span></div>
+<div class="bar"><div id="xpbar"></div></div>
+<div class="slot" id="reel">🍒 🍋 🍇</div>
+<p id="pesan">Gas spin met!</p>
+<button onclick="spin()">SPIN! (-100)</button><br>
+<button class="btn-blue" id="autobtn" onclick="toggleAuto()">▶️ AUTO SPIN: OFF</button><br>
+<button class="btn-green" onclick="bonus()">+ 500 KOIN GRATIS</button>
+<button class="btn-red" onclick="resetGame()">RESET</button>
+<p style="font-size:13px;color:#aaa">🏆 JACKPOT 3 Sama = +5000<br>✨ 2 Sama = +300<br>⭐ Naik Level = Bonus Koin!<br>Level 5 = JACKPOT x2!<br>🔊 Ada suara! Koin ke-save otomatis!</p>
+</div>
+<p>By MET93 - No Judi, Cuma Seru-seruan!</p>
+<script>
+let symbols=["🍒","🍋","🍇","⭐","🔔","7️⃣","💎"];
+let levels=["PEMULA","SULTAN KECIL","SULTAN","RAJA SLOT","DEWA KOYAN","LEGEND"];
+// LOAD SAVE
+let save=JSON.parse(localStorage.getItem("met93_slot_v3")||"{}");
+let koin=save.koin??1000, xp=save.xp??0, level=save.level??1;
+let auto=false, autoTimer=null, isSpinning=false;
+let audioCtx=null;
+function sound(freq,dur,type="square"){
+  try{
+    if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    let o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.type=type; o.frequency.value=freq;
+    g.gain.setValueAtTime(0.15,audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime+dur);
+  }catch(e){}
+}
+function playWin(big){
+  if(big){ [523,659,784,1046,1318].forEach((f,i)=>setTimeout(()=>sound(f,0.25),i*120)); }
+  else { sound(659,0.15); setTimeout(()=>sound(784,0.2),120); }
+}
+function playClick(){ sound(400,0.08,"sine"); }
+function saveGame(){ localStorage.setItem("met93_slot_v3",JSON.stringify({koin,xp,level})); }
+function update(){
+  document.getElementById("koin").innerText="💰 Koin: "+koin;
+  document.getElementById("level").innerText="⭐ LEVEL "+level+" - "+(levels[level-1]||"LEGEND");
+  let need=level*100;
+  document.getElementById("xptext").innerText=xp+" / "+need;
+  document.getElementById("xpbar").style.width=Math.min(100,xp/need*100)+"%";
+  saveGame();
+}
+function spin(){
+  if(isSpinning) return;
+  if(koin<100){ document.getElementById("pesan").innerText="Koin habis! Pencet +500 GRATIS!"; sound(200,0.3); return; }
+  playClick();
+  isSpinning=true; koin-=100;
+  let reel=document.getElementById("reel");
+  reel.classList.add("spinning");
+  let ticks=0;
+  let timer=setInterval(()=>{
+    reel.innerText=symbols[Math.floor(Math.random()*7)]+" "+symbols[Math.floor(Math.random()*7)]+" "+symbols[Math.floor(Math.random()*7)];
+    if(ticks%3==0) sound(300+Math.random()*400,0.05,"sine");
+    ticks++;
+    if(ticks>12){
+      clearInterval(timer);
+      reel.classList.remove("spinning");
+      let a=symbols[Math.floor(Math.random()*7)], b=symbols[Math.floor(Math.random()*7)], c=symbols[Math.floor(Math.random()*7)];
+      reel.innerText=a+" "+b+" "+c;
+      let win=0, msg="Belum hoki, gas lagi!";
+      if(a==b && b==c){ win=5000; if(level>=5) win*=2; msg="🎉 JACKPOT!!! +"+win+"!"; playWin(true); }
+      else if(a==b||b==c||a==c){ win=300; msg="✨ 2 Sama! +300!"; playWin(false); }
+      else { sound(150,0.2); }
+      koin+=win; xp+=20;
+      if(xp>=level*100){ xp=0; level++; let bonusKoin=level*500; koin+=bonusKoin; msg+=" ⭐ NAIK LEVEL "+level+"! Bonus +"+bonusKoin; playWin(true); }
+      document.getElementById("pesan").innerText=msg;
+      update(); isSpinning=false;
+    }
+  },80);
+}
+function toggleAuto(){
+  auto=!auto;
+  document.getElementById("autobtn").innerText=auto?"⏸️ AUTO SPIN: ON":"▶️ AUTO SPIN: OFF";
+  if(auto){ spin(); autoTimer=setInterval(()=>{ if(!isSpinning) spin(); },900); }
+  else clearInterval(autoTimer);
+}
+function bonus(){ koin+=500; document.getElementById("pesan").innerText="Mantap +500!"; playWin(false); update(); }
+function resetGame(){ if(confirm("Reset semua?")){ koin=1000; xp=0; level=1; update(); document.getElementById("pesan").innerText="Di-reset! Gas lagi!"; } }
+update();
+</script>
+</body>
+</html>
