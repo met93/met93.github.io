@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GATES OF KOYAN 1000</title>
+<style>
+body{margin:0;background:#1a0b2e;color:#fff;font-family:Arial;text-align:center;padding-bottom:20px}
+.top{background:linear-gradient(#ffcc00,#ff8800);color:#4a0000;padding:10px}
+.top h1{margin:0;font-size:22px;text-shadow:1px 1px 0 #fff}
+.zeus{font-size:50px}
+#grid{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;max-width:420px;margin:10px auto;background:#2d1155;padding:8px;border:3px solid gold;border-radius:10px}
+.cell{background:#3d1a6d;height:52px;display:flex;align-items:center;justify-content:center;font-size:26px;border-radius:6px}
+.cell.win{background:gold;animation:pop .3s}
+@keyframes pop{50%{transform:scale(1.2)}}
+#info{font-size:14px;min-height:20px;color:#ffe600;font-weight:bold}
+#winbox{font-size:18px;color:#00ff88;font-weight:bold;min-height:25px}
+button{padding:10px 14px;border:none;border-radius:10px;font-weight:bold;margin:4px;cursor:pointer}
+.gold{background:gold}.blue{background:#00ccff}.green{background:#00ff88}.red{background:#ff4444;color:#fff}.purple{background:#aa00ff;color:#fff}
+#autoModal{display:none;position:fixed;top:20%;left:10%;right:10%;background:#111;padding:20px;border:2px solid gold;border-radius:15px;z-index:99}
+input[type=range]{width:90%}
+.bar{background:#333;height:10px;border-radius:10px;max-width:350px;margin:5px auto;overflow:hidden}
+#xpbar{background:gold;height:100%;width:0%}
+</style>
+</head>
+<body>
+<div class="top"><h1>⚡ GATES OF KOYAN 1000 ⚡</h1><div>WIN UP TO 15000X BET</div></div>
+<div class="zeus" id="zeus">🧔‍♂️⚡</div>
+<div id="info">SYMBOLS PAY ANYWHERE ON THE SCREEN - 8+ SAMA = MENANG!</div>
+<div id="grid"></div>
+<div id="winbox">GOOD LUCK!</div>
+<div>💰 CREDIT: <b id="credit">100000</b> | BET: <b id="betTxt">200</b> | MULTIPLIER: <b id="mult">x1</b></div>
+<div class="bar"><div id="xpbar"></div></div>
+<div id="xpTxt">LEVEL 1 - 0/100 XP</div>
+<div>
+<button class="purple" onclick="buyFree()">BUY FREE SPINS<br>20000</button>
+<button class="gold" onclick="changeBet(-100)">-</button>
+<button class="gold" onclick="spin()">🔄 SPIN</button>
+<button class="gold" onclick="changeBet(100)">+</button>
+<button class="blue" onclick="showAuto()">AUTOPLAY</button>
+</div>
+<div><button class="green" onclick="freeCoins()">+10000 GRATIS</button> <button onclick="backLobby()">⬅️ LOBBY</button></div>
+<p style="font-size:11px;color:#aaa">By MET93 - Game Hiburan Koin Virtual, Bukan Judi Uang Asli</p>
+
+<div id="autoModal">
+<h3>AUTOPLAY SETTINGS</h3>
+<label><input type="checkbox" id="turbo"> TURBO SPIN</label><br><br>
+NUMBER OF AUTOSPINS: <b id="autoNumTxt">20</b><br>
+<input type="range" id="autoNum" min="10" max="100" step="10" value="20" oninput="document.getElementById('autoNumTxt').innerText=this.value"><br><br>
+<button class="green" onclick="startAuto()">START AUTOPLAY</button>
+<button class="red" onclick="hideAuto()">TUTUP</button>
+</div>
+
+<script>
+let syms=["🔵","🟣","🟢","🔴","👑","💍","🏆","⏳","⚡"];
+let values={ "🔵":0.5,"🟣":0.5,"🟢":0.5,"🔴":1,"👑":2,"💍":2,"🏆":5,"⏳":5,"⚡":10 };
+let save=JSON.parse(localStorage.getItem("met93_slot_v5")||"{}");
+let credit=save.credit??100000,bet=200,level=save.level??1,xp=save.xp??0,mult=1,autoLeft=0,autoTimer=null,spinning=false;
+function saveG(){localStorage.setItem("met93_slot_v5",JSON.stringify({credit,level,xp}));}
+function update(){
+document.getElementById("credit").innerText=Math.floor(credit);
+document.getElementById("betTxt").innerText=bet;
+document.getElementById("mult").innerText="x"+mult;
+document.getElementById("xpTxt").innerText="LEVEL "+level+" - "+xp+"/"+(level*100)+" XP";
+document.getElementById("xpbar").style.width=Math.min(100,xp/(level*100)*100)+"%";
+saveG();
+}
+function sound(f){try{let c=new (window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();o.frequency.value=f;g.gain.setValueAtTime(0.1,c.currentTime);g.gain.exponentialRampToValueAtTime(0.01,c.currentTime+0.2);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+0.2);}catch(e){}}
+function draw(board){
+document.getElementById("grid").innerHTML=board.map((s,i)=>`<div class="cell" id="c${i}">${s}</div>`).join("");
+}
+let board=[];
+function newBoard(){board=[];for(let i=0;i<30;i++) board.push(syms[Math.floor(Math.random()*syms.length)]);draw(board);}
+newBoard();
+function changeBet(d){bet=Math.max(100,Math.min(2000,bet+d));update();sound(500);}
+function checkWin(){
+let counts={};board.forEach(s=>counts[s]=(counts[s]||0)+1);
+let winSyms=Object.keys(counts).filter(s=>counts[s]>=8);
+return winSyms;
+}
+async function spin(){
+if(spinning) return; if(credit<bet){document.getElementById("winbox").innerText="KREDIT HABIS! PENCET +10000 GRATIS!";return;}
+spinning=true;credit-=bet;mult=1;update();
+document.getElementById("winbox").innerText="SPINNING...";
+document.getElementById("info").innerText="SYMBOLS PAY ANYWHERE...";
+newBoard();await new Promise(r=>setTimeout(r,400));
+let totalWin=0, tumble=0;
+while(true){
+let wins=checkWin();
+if(wins.length==0) break;
+tumble++;
+let winAmt=0;
+wins.forEach(s=>{
+let cnt=board.filter(x=>x==s).length;
+winAmt+=values[s]*cnt*(bet/100);
+document.querySelectorAll(".cell").forEach((el,i)=>{if(board[i]==s) el.classList.add("win")});
+});
+winAmt=Math.floor(winAmt);
+totalWin+=winAmt;
+document.getElementById("winbox").innerText="TUMBLE WIN +"+winAmt+" | TOTAL: "+totalWin;
+sound(700);await new Promise(r=>setTimeout(r,500));
+// tumble: hapus yang menang, jatuhin yang atas
+let newBoard2=[...board];
+for(let col=0;col<6;col++){
+let colVals=[];
+for(let row=4;row>=0;row--){let idx=row*6+col;if(!wins.includes(board[idx])) colVals.push(board[idx]);}
+while(colVals.length<5) colVals.push(syms[Math.floor(Math.random()*syms.length)]);
+for(let row=4;row>=0;row--){newBoard2[row*6+col]=colVals[4-row];}
+}
+board=newBoard2;draw(board);await new Promise(r=>setTimeout(r,300));
+// multiplier random kayak petir Zeus
+if(Math.random()<0.35){
+let m=[2,3,5,8,10,15][Math.floor(Math.random()*6)];
+mult+=m;document.getElementById("zeus").innerText="🧔‍♂️⚡💥";
+document.getElementById("info").innerText="⚡ ZEUS NYAMBER! MULTIPLIER +"+m+" = x"+mult+"!";
+sound(1000);await new Promise(r=>setTimeout(r,500));
+document.getElementById("zeus").innerText="🧔‍♂️⚡";
+}
+if(tumble>5) break;
+}
+if(totalWin>0){
+let finalWin=Math.floor(totalWin*mult);
+credit+=finalWin;xp+=30;
+if(xp>=level*100){xp=0;level++;credit+=level*5000;document.getElementById("info").innerText="⭐ NAIK LEVEL "+level+"! BONUS +"+(level*5000);}
+document.getElementById("winbox").innerText="🏆 WIN "+finalWin+" (x"+mult+")!";
+if(finalWin>bet*10){document.getElementById("info").innerText="🔥🔥 MEGA WIN! SENSATIONAL!";}
+} else {
+document.getElementById("winbox").innerText="Belum hoki, gas lagi!";
+}
+update();spinning=false;
+if(autoLeft>0){autoLeft--;if(autoLeft>0) setTimeout(spin,800); else {document.getElementById("winbox").innerText="AUTOPLAY SELESAI!";}}
+}
+function showAuto(){document.getElementById("autoModal").style.display="block";}
+function hideAuto(){document.getElementById("autoModal").style.display="none";}
+function startAuto(){autoLeft=parseInt(document.getElementById("autoNum").value);hideAuto();document.getElementById("winbox").innerText="AUTOPLAY: "+autoLeft+"x";spin();}
+function buyFree(){
+if(credit<20000){alert("Kredit kurang! Pencet +10000 GRATIS dulu!");return;}
+credit-=20000;update();document.getElementById("info").innerText="🎁 FREE SPINS DIBELI! 15x SPIN GRATIS!";
+autoLeft=15;setTimeout(spin,500);
+}
+function freeCoins(){credit+=10000;update();}
+function backLobby(){location.href="slot4.html";}
+update();
+</script>
+</body>
+</html>
