@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SLOT KOYAN V4 - LOBBY</title>
+<style>
+body{background:#000;color:#fff;font-family:Arial;margin:0;padding-bottom:70px}
+.top{padding:12px;text-align:center;background:#111}
+.top b{color:gold;font-size:20px}
+.prov{display:flex;gap:8px;overflow-x:auto;padding:10px}
+.pbtn{min-width:90px;background:#1e3a8a;padding:10px;border-radius:8px;text-align:center;cursor:pointer;border:2px solid transparent}
+.pbtn.active{border-color:gold;background:#2a4bb5}
+.pbtn small{font-size:11px;color:#ccc}
+.tabs{display:flex;gap:25px;padding:0 15px;font-size:16px;color:#aaa}
+.tabs b{color:gold;border-bottom:2px solid gold;padding-bottom:5px}
+.grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;padding:12px}
+.card{background:#1a1a1a;border-radius:12px;overflow:hidden;cursor:pointer;text-align:center;padding-bottom:8px}
+.card .img{height:110px;font-size:45px;display:flex;align-items:center;justify-content:center;position:relative}
+.rtp{position:absolute;top:5px;left:5px;right:5px;background:rgba(0,0,0,0.7);color:#ffe600;font-size:11px;padding:3px;border-radius:6px}
+.card p{font-size:12px;margin:6px 2px}
+.card small{color:#888;font-size:10px}
+#game{display:none;padding:15px;text-align:center}
+.slot{font-size:48px;background:#fff;border-radius:15px;padding:15px;margin:10px auto;max-width:350px}
+button{background:gold;border:none;padding:12px 22px;border-radius:25px;font-weight:bold;margin:5px;cursor:pointer}
+.btn-blue{background:#00ccff}.btn-green{background:#00ff88}.btn-red{background:#ff4444;color:#fff}
+.bottom{position:fixed;bottom:0;left:0;right:0;background:#111;display:flex;justify-content:space-around;padding:10px 0;font-size:11px;text-align:center}
+.bottom div{cursor:pointer}
+.bar{background:#333;height:10px;border-radius:10px;overflow:hidden;max-width:350px;margin:auto}
+#xpbar{background:gold;height:100%;width:0%}
+</style>
+</head>
+<body>
+<div class="top"><b>🎰 SLOT KOYAN V4</b><br><span id="koin">💰 Koin: 1000</span> | <span id="level">⭐ LEVEL 1</span></div>
+
+<div id="lobby">
+<div style="padding:5px 15px;color:#aaa;font-size:13px">SLOTS PROVIDERS</div>
+<div class="prov" id="prov"></div>
+<div class="tabs"><span onclick="setTab('BARU')">BARU</span><span onclick="setTab('TOP')">TOP</span><b id="tabSemua" onclick="setTab('SEMUA')">SEMUA</b></div>
+<div class="grid" id="grid"></div>
+<p style="text-align:center;color:#666;font-size:12px">By MET93 - No Judi, Cuma Seru-seruan! Koin Virtual Only!</p>
+</div>
+
+<div id="game">
+<button class="btn-blue" onclick="back()">⬅️ BALIK KE LOBBY</button>
+<h2 id="gtitle">Game</h2>
+<div class="bar"><div id="xpbar"></div></div>
+<p id="xptext">0 / 100</p>
+<div class="slot" id="reel">🍒 🍋 🍇</div>
+<p id="pesan">Gas spin!</p>
+<button onclick="spin()">SPIN! (-100)</button><br>
+<button class="btn-blue" id="autobtn" onclick="toggleAuto()">▶️ AUTO: OFF</button>
+<button class="btn-green" onclick="bonus()">+500 GRATIS</button>
+</div>
+
+<div class="bottom"><div onclick="back()">🏠<br>HOME</div><div>🎁<br>PROMO SAYA</div><div>💰<br>DANA</div><div>✉️<br>MEMO</div><div>💬<br>LIVE CHAT</div></div>
+
+<script>
+let providers=["PRAGMATIC KOYAN","PG KOYAN","CQ9 KOYAN","BESOFT KOYAN"];
+let games=[
+{id:1,name:"Gates of Koyan 2500",prov:0,rtp:"96.52%",emoji:"⚡🏛️",sym:["⚡","👑","🏛️","💎","🔔"],tag:"TOP"},
+{id:2,name:"Gates of Koyan 1000",prov:0,rtp:"96.00%",emoji:"⚡👑",sym:["⚡","👑","💎","🍇","⭐"],tag:"TOP"},
+{id:3,name:"Sweet Koyan Loot",prov:0,rtp:"96.53%",emoji:"🍬🍭",sym:["🍬","🍭","🍓","🍒","🍊"],tag:"BARU"},
+{id:4,name:"Koyan Super Scatter",prov:0,rtp:"96.50%",emoji:"👑⚡",sym:["👑","⚡","💎","🔔","7️⃣"],tag:"BARU"},
+{id:5,name:"Mahjong Koyan Wins 3",prov:1,rtp:"96.50%",emoji:"🀄🐉",sym:["🀄","🐉","🎋","🀄","💎"],tag:"TOP"},
+{id:6,name:"Xmas Guardians",prov:1,rtp:"96.53%",emoji:"🎅🎄",sym:["🎅","🎄","🎁","⭐","🔔"],tag:"BARU"},
+{id:7,name:"Sweet Koyan Bonanza",prov:2,rtp:"96.50%",emoji:"🍭🍬",sym:["🍬","🍓","🍌","🍇","🍒"],tag:"TOP"},
+{id:8,name:"Koyan Fortune Tiger",prov:2,rtp:"96.50%",emoji:"🐯💰",sym:["🐯","💰","🧧","⭐","🍒"],tag:"BARU"},
+{id:9,name:"Koyan Aztec Gems",prov:3,rtp:"96.50%",emoji:"💎🏺",sym:["💎","🏺","🔷","⭐","🍋"],tag:"SEMUA"},
+];
+let save=JSON.parse(localStorage.getItem("met93_slot_v4")||"{}");
+let koin=save.koin??1000,xp=save.xp??0,level=save.level??1;
+let curProv=0,curTab="SEMUA",curGame=games[0],auto=false,autoTimer=null,spinning=false,audioCtx=null;
+function sound(f,d){try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();let o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type="square";o.frequency.value=f;g.gain.setValueAtTime(0.12,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+d);o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+d);}catch(e){}}
+function saveG(){localStorage.setItem("met93_slot_v4",JSON.stringify({koin,xp,level}));}
+function updateTop(){
+document.getElementById("koin").innerText="💰 Koin: "+koin;
+document.getElementById("level").innerText="⭐ LEVEL "+level;
+let need=level*100;document.getElementById("xptext").innerText=xp+" / "+need;
+document.getElementById("xpbar").style.width=Math.min(100,xp/need*100)+"%";saveG();
+}
+function renderProv(){
+document.getElementById("prov").innerHTML=providers.map((p,i)=>`<div class="pbtn ${i==curProv?'active':''}" onclick="pickProv(${i})"><b>${p.split(" ")[0]}</b><br><small>${p}</small></div>`).join("");
+}
+function pickProv(i){curProv=i;renderProv();renderGrid();sound(500,0.1);}
+function setTab(t){curTab=t;renderGrid();}
+function renderGrid(){
+let list=games.filter(g=>g.prov==curProv);
+if(curTab!="SEMUA") list=list.filter(g=>g.tag==curTab);
+if(list.length==0) list=games.filter(g=>g.prov==curProv);
+document.getElementById("grid").innerHTML=list.map(g=>`<div class="card" onclick="openGame(${g.id})"><div class="img" style="background:linear-gradient(135deg,#${Math.floor(Math.random()*16777215).toString(16).padStart(6,'0')},#222)"><span class="rtp">RTP ${g.rtp}</span>${g.emoji}</div><p>${g.name}</p><small>${providers[g.prov]}</small></div>`).join("");
+}
+function openGame(id){
+curGame=games.find(g=>g.id==id);
+document.getElementById("lobby").style.display="none";
+document.getElementById("game").style.display="block";
+document.getElementById("gtitle").innerText=curGame.emoji+" "+curGame.name+" - RTP "+curGame.rtp;
+document.getElementById("reel").innerText=curGame.sym.slice(0,3).join(" ");
+document.getElementById("pesan").innerText="Gas spin di "+curGame.name+"!";
+sound(600,0.15);window.scrollTo(0,0);
+}
+function back(){
+document.getElementById("lobby").style.display="block";
+document.getElementById("game").style.display="none";
+if(auto) toggleAuto();
+}
+function spin(){
+if(spinning) return;
+if(koin<100){document.getElementById("pesan").innerText="Koin habis! Pencet +500 GRATIS!";return;}
+spinning=true;koin-=100;updateTop();
+let reel=document.getElementById("reel");let ticks=0;
+let t=setInterval(()=>{
+reel.innerText=curGame.sym[Math.floor(Math.random()*curGame.sym.length)]+" "+curGame.sym[Math.floor(Math.random()*curGame.sym.length)]+" "+curGame.sym[Math.floor(Math.random()*curGame.sym.length)];
+ticks++;if(ticks>12){clearInterval(t);
+let a=curGame.sym[Math.floor(Math.random()*curGame.sym.length)],b=curGame.sym[Math.floor(Math.random()*curGame.sym.length)],c=curGame.sym[Math.floor(Math.random()*curGame.sym.length)];
+reel.innerText=a+" "+b+" "+c;
+let win=0,msg="Belum hoki, gas lagi!";
+if(a==b&&b==c){win=5000;if(level>=5)win*=2;msg="🎉 JACKPOT +"+win+"!";[523,659,784,1046].forEach((f,i)=>setTimeout(()=>sound(f,0.2),i*120));}
+else if(a==b||b==c||a==c){win=300;msg="✨ 2 Sama! +300!";sound(659,0.15);}
+koin+=win;xp+=20;
+if(xp>=level*100){xp=0;level++;let bk=level*500;koin+=bk;msg+=" ⭐ NAIK LEVEL "+level+"! Bonus +"+bk;}
+document.getElementById("pesan").innerText=msg;updateTop();spinning=false;}
+},80);
+}
+function toggleAuto(){auto=!auto;document.getElementById("autobtn").innerText=auto?"⏸️ AUTO: ON":"▶️ AUTO: OFF";if(auto){spin();autoTimer=setInterval(()=>{if(!spinning)spin();},900);}else clearInterval(autoTimer);}
+function bonus(){koin+=500;document.getElementById("pesan").innerText="Mantap +500!";updateTop();}
+renderProv();renderGrid();updateTop();
+</script>
+</body>
+</html>
