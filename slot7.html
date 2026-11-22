@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GATES OF KOYAN 1000x FIX</title>
+<style>
+body{margin:0;background:#12051f;color:#fff;font-family:Arial;text-align:center}
+.top{background:linear-gradient(#ffd700,#ff6a00);color:#3a0000;padding:12px}
+.top h1{margin:0;font-size:22px}
+#zeus{font-size:60px}
+#grid{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;max-width:420px;margin:10px auto;background:#2a0a50;padding:8px;border:3px solid gold;border-radius:12px;min-height:290px}
+.cell{background:#4a1a7d;height:52px;display:flex;align-items:center;justify-content:center;font-size:28px;border-radius:6px}
+.cell.win{background:gold}
+#bigwin{font-size:24px;font-weight:900;color:#ffd700;min-height:30px}
+button{padding:12px 16px;border:none;border-radius:12px;font-weight:900;margin:4px;font-size:14px}
+.gold{background:gold}.blue{background:#00ccff}.green{background:#00ff88}.purple{background:#c400ff;color:#fff}.red{background:#ff3333;color:#fff}
+#flash{position:fixed;top:0;left:0;right:0;bottom:0;background:#fff;opacity:0;pointer-events:none;z-index:99}
+</style>
+</head>
+<body>
+<div id="flash"></div>
+<div class="top"><h1>⚡ GATES OF KOYAN 1000x ⚡</h1><div>WIN UP TO 15000X - PETIR SAMPE x1000!</div></div>
+<div id="zeus">🧔⚡</div>
+<div style="color:#ffe600;font-weight:bold">8+ SAMA = MENANG! 4x ⚡ = 15 FREE SPINS!</div>
+<div id="grid"></div>
+<div id="bigwin">GOOD LUCK!</div>
+<div>💰 <b id="credit">100000</b> | BET: <b id="betTxt">200</b> | <b id="multTxt" style="background:red;padding:4px 10px;border-radius:15px">MULTI x1</b></div>
+<div id="fsTxt" style="color:#00ff88;font-weight:bold"></div>
+<div>
+<button class="purple" onclick="buyFree()">BUY BONUS 20000</button><br>
+<button class="gold" onclick="changeBet(-100)">-</button>
+<button class="gold" id="spinBtn" style="font-size:20px;padding:15px 25px" onclick="doSpin()">🔄 SPIN</button>
+<button class="gold" onclick="changeBet(100)">+</button><br>
+<button class="blue" onclick="doAuto()">AUTOPLAY 20x</button>
+<button class="green" onclick="freeCoins()">+10000 GRATIS</button>
+</div>
+<p style="font-size:11px;color:#999">By MET93 - Koin Virtual Hiburan Saja</p>
+<script>
+var syms=["🔵","🟣","🟢","🔴","👑","💍","🏆","⏳","⚡"];
+var vals={"🔵":2,"🟣":2,"🟢":2,"🔴":4,"👑":8,"💍":8,"🏆":20,"⏳":20};
+var credit=100000, bet=200, totalMult=1, spinning=false, freeSpins=0;
+var board=[];
+function draw(){
+  var g=document.getElementById("grid");
+  var html="";
+  for(var i=0;i<30;i++){ html+='<div class="cell">'+board[i]+'</div>'; }
+  g.innerHTML=html;
+}
+function newBoard(){
+  board=[];
+  for(var i=0;i<30;i++){ board.push(syms[Math.floor(Math.random()*syms.length)]); }
+  draw();
+}
+function update(){
+  document.getElementById("credit").innerText=credit;
+  document.getElementById("betTxt").innerText=bet;
+  document.getElementById("multTxt").innerText="MULTI x"+totalMult;
+  document.getElementById("fsTxt").innerText=freeSpins>0?"🎁 FREE SPINS: "+freeSpins:"";
+}
+function changeBet(d){ bet=Math.max(100,Math.min(2000,bet+d)); update(); }
+function freeCoins(){ credit+=10000; update(); document.getElementById("bigwin").innerText="+10000 DITAMBAH!"; }
+function buyFree(){ if(credit<20000){alert("Kredit kurang! Pencet +10000 GRATIS!");return;} credit-=20000; freeSpins+=15; update(); document.getElementById("bigwin").innerText="🎁 15 FREE SPINS DIBELI!"; setTimeout(doSpin,500); }
+function doAuto(){ var c=20; function loop(){ if(c>0){ c--; doSpin(); setTimeout(loop,1200); } } loop(); }
+function doSpin(){
+  if(spinning) return;
+  var isFree = freeSpins>0;
+  if(!isFree && credit<bet){ document.getElementById("bigwin").innerText="KREDIT HABIS! PENCET +10000 GRATIS!"; return; }
+  if(!isFree) credit-=bet; else freeSpins--;
+  spinning=true; totalMult=1; update();
+  document.getElementById("bigwin").innerText=isFree?"🎁 FREE SPIN...":"SPINNING...";
+  newBoard();
+  setTimeout(function(){
+    var totalWin=0;
+    var tumble=0;
+    function checkTumble(){
+      var counts={};
+      for(var i=0;i<board.length;i++){ counts[board[i]]=(counts[board[i]]||0)+1; }
+      var wins=[];
+      for(var k in counts){ if(k!="⚡" && counts[k]>=8) wins.push(k); }
+      if(wins.length==0 || tumble>5){ finish(); return; }
+      tumble++;
+      var winAmt=0;
+      for(var w=0;w<wins.length;w++){ winAmt += vals[wins[w]] * counts[wins[w]]; }
+      winAmt = Math.floor(winAmt * (bet/100));
+      totalWin+=winAmt;
+      document.getElementById("bigwin").innerText="TUMBLE +"+winAmt+" | TOTAL: "+totalWin;
+      // Ganti simbol menang jadi baru
+      for(var i=0;i<30;i++){ if(wins.indexOf(board[i])>=0){ board[i]=syms[Math.floor(Math.random()*syms.length)]; } }
+      draw();
+      // PETIR ZEUS
+      if(Math.random()<0.45){
+        var r=Math.random();
+        var m=2;
+        if(r<0.01) m=1000; else if(r<0.03) m=500; else if(r<0.06) m=100; else if(r<0.12) m=50; else m=[2,3,5,8,10,15,25][Math.floor(Math.random()*7)];
+        totalMult+=m;
+        var f=document.getElementById("flash"); f.style.opacity=0.9; setTimeout(function(){f.style.opacity=0;},300);
+        document.getElementById("zeus").innerText="🧔💥 x"+m+"!";
+        document.getElementById("bigwin").innerText="⚡ ZEUS NYAMBER! x"+m+"!!! TOTAL: "+totalWin;
+        setTimeout(function(){document.getElementById("zeus").innerText="🧔⚡";},800);
+        update();
+      }
+      setTimeout(checkTumble,600);
+    }
+    function finish(){
+      var scatter=0;
+      for(var i=0;i<board.length;i++) if(board[i]=="⚡") scatter++;
+      if(scatter>=4){ freeSpins+=15; document.getElementById("bigwin").innerText="🎉 "+scatter+" SCATTER! +15 FREE SPINS!"; }
+      else if(totalWin>0){
+        var finalWin=Math.floor(totalWin*totalMult);
+        credit+=finalWin;
+        var label="🏆 WIN "+finalWin;
+        if(finalWin>bet*20) label="🔥🔥 SENSATIONAL! "+finalWin+"!!!";
+        else if(finalWin>bet*10) label="💥 MEGA WIN! "+finalWin+"!";
+        else if(finalWin>bet*5) label="🎉 BIG WIN! "+finalWin;
+        if(totalMult>=100) label="⚡⚡ x"+totalMult+" MAX WIN!! "+finalWin+"
