@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>KOYAN LEGENDS - MOBA</title>
+<style>
+body{margin:0;background:#0a1a0a;color:#fff;font-family:Arial;overflow:hidden;user-select:none}
+#top{display:flex;justify-content:space-between;padding:6px 10px;background:#111;font-size:13px;font-weight:900}
+#top span{color:#ffd700}
+#cv{width:100%;height:calc(100vh - 150px);background:#1a3a1a;display:block;touch-action:none}
+#hud{position:fixed;bottom:0;left:0;right:0;height:110px;background:#111;display:flex;justify-content:space-between;align-items:center;padding:0 10px}
+#joy{width:90px;height:90px;background:#333;border:2px solid #fff;border-radius:50%;position:relative;flex-shrink:0}
+#knob{width:40px;height:40px;background:#ffd700;border-radius:50%;position:absolute;left:25px;top:25px}
+#skills{display:flex;gap:8px;align-items:center}
+.sbtn{width:58px;height:58px;border-radius:50%;border:3px solid #fff;font-weight:900;font-size:13px;color:#fff}
+#atk{background:#ff3333;width:70px;height:70px;font-size:15px}
+#s1{background:#ff6600}#s2{background:#0066ff}#s3{background:#9900ff}
+#msg{position:fixed;top:40%;left:0;right:0;text-align:center;font-size:30px;font-weight:900;color:#ffd700;text-shadow:2px 2px #000;pointer-events:none;z-index:99}
+</style>
+</head>
+<body>
+<div id="top"><div>🔵 KILL: <span id="kills">0</span> | GOLD: <span id="gold">0</span></div><div>⏱ <span id="time">00:00</span></div><div>LV: <span id="lv">1</span> | HP: <span id="hpTxt">100</span></div></div>
+<canvas id="cv"></canvas>
+<div id="msg">KOYAN LEGENDS!<br><span style="font-size:15px;color:#fff">Hancurkan BASE MERAH!</span></div>
+<div id="hud">
+<div id="joy"><div id="knob"></div></div>
+<div id="skills">
+<button class="sbtn" id="s1" onclick="skill(1)">SKILL 1<br>🔥</button>
+<button class="sbtn" id="s2" onclick="skill(2)">HEAL<br>💚</button>
+<button class="sbtn" id="s3" onclick="skill(3)">ULTI<br>⚡</button>
+<button class="sbtn" id="atk" onclick="attack()">ATK<br>⚔️</button>
+</div>
+</div>
+<script>
+var cv=document.getElementById("cv"), ctx=cv.getContext("2d");
+function resize(){ cv.width=cv.clientWidth; cv.height=cv.clientHeight; }
+window.onresize=resize; resize();
+var P={x:100,y:200,hp:200,max:200,atk:18,lv:1,gold:0,kills:0,speed:3.2,cd1:0,cd2:0,cd3:0,range:60};
+var E={x:0,y:0}; // di set di resize
+var minions=[], enemies=[], towers=[], bases=[];
+var jx=0, jy=0, joyActive=false;
+var startTime=Date.now();
+var gameOver=false;
+function init(){
+  // Tower Biru (kita) kiri, Merah kanan
+  towers=[
+    {x:200,y:200,hp:600,max:600,team:"blue",r:30},
+    {x:cv.width-200,y:200,hp:600,max:600,team:"red",r:30}
+  ];
+  bases=[
+    {x:50,y:200,hp:1000,max:1000,team:"blue",r:40},
+    {x:cv.width-50,y:200,hp:1000,max:1000,team:"red",r:40}
+  ];
+  P.x=100; P.y=300;
+  setInterval(spawnWave, 5000);
+  spawnWave();
+  setInterval(spawnEnemyHero, 8000);
+  spawnEnemyHero();
+}
+function spawnWave(){
+  if(gameOver) return;
+  for(var i=0;i<3;i++){
+    minions.push({x:80,y:170+i*30,hp:60,max:60,team:"blue",atk:5,speed:0.8});
+    minions.push({x:cv.width-80,y:170+i*30,hp:60,max:60,team:"red",atk:5,speed:0.8});
+  }
+}
+function spawnEnemyHero(){
+  if(gameOver) return;
+  enemies.push({x:cv.width-120,y:150+Math.random()*150,hp:120+ P.lv*20,max:120+P.lv*20,atk:10,speed:1.2,team:"red"});
+}
+function dist(a,b){ return Math.hypot(a.x-b.x,a.y-b.y); }
+// Joystick
+var joy=document.getElementById("joy"), knob=document.getElementById("knob");
+joy.addEventListener("touchstart",function(e){ joyActive=true; moveJoy(e); });
+joy.addEventListener("touchmove",function(e){ e.preventDefault(); moveJoy(e); },{passive:false});
+joy.addEventListener("touchend",function(){ joyActive=false; jx=0; jy=0; knob.style.left="25px"; knob.style.top="25px"; });
+function moveJoy(e){
+  var r=joy.getBoundingClientRect();
+  var t=e.touches[0];
+  var dx=t.clientX-(r.left+45), dy=t.clientY-(r.top+45);
+  var l=Math.hypot(dx,dy); if(l>30){ dx=dx/l*30; dy=dy/l*30; }
+  knob.style.left=(25+dx)+"px"; knob.style.top=(25+dy)+"px";
+  jx=dx/30; jy=dy/30;
+}
+// Keyboard PC juga bisa
+window.addEventListener("keydown",function(e){
+  if(e.key=="w") jy=-1; if(e.key=="s") jy=1; if(e.key=="a") jx=-1; if(e.key=="d") jx=1; if(e.key=="j") attack(); if(e.key=="k") skill(1);
+});
+window.addEventListener("keyup",function(){ jx=0; jy=0; });
+function attack(){
+  if(gameOver) return;
+  // Cari musuh terdekat
+  var targets=[].concat(enemies, minions.filter(m=>m.team=="red"), towers.filter(t=>t.team=="red"), bases.filter(b=>b.team=="red"));
+  var best=null, bd=999;
+  for(var i=0;i<targets.length;i++){ var d=dist(P,targets[i]); if(d<bd){ bd=d; best=targets[i]; } }
+  if(best && bd < P.range+30){
+    best.hp -= P.atk;
+    showMsg("HIT -"+P.atk, best.x, best.y);
+    if(best.hp<=0){
+      if(best.team=="red" && enemies.indexOf(best)>=0){ P.kills++; P.gold+=120; P.lv++; P.max+=30; P.hp=P.max; P.atk+=4; showMsg("KILL! +120 GOLD!", P.x, P.y-20); }
+      if(minions.indexOf(best)>=0){ P.gold+=30; }
+      // Hapus
+      var idx=enemies.indexOf(best); if(idx>=0) enemies.splice(idx,1);
+      idx=minions.indexOf(best); if(idx>=0) minions.splice(idx,1);
+    }
+  } else {
+    showMsg("MISS! Deketin musuh!", P.x, P.y-20);
+  }
+}
+function skill(n){
+  if(gameOver) return;
+  if(n==1 && P.cd1<=0){ P.cd1=5; for(var i=0;i<enemies.length;i++){ if(dist(P,enemies[i])<120) enemies[i].hp-=60; } for(var i=0;i<minions.length;i++){ if(minions[i].team=="red" && dist(P,minions[i])<120) minions[i].hp-=60; } showMsg("FIREBALL! -60!", P.x, P.y-30); }
+  if(n==2 && P.cd2<=0){ P.cd2=8; P.hp=Math.min(P.max, P.hp+80); showMsg("+80 HP HEAL!", P.x, P.y-30); }
+  if(n==3 && P.cd3<=0){ P.cd3=15; for(var i=0;i<enemies.length;i++){ if(dist(P,enemies[i])<180) enemies[i].hp-=150; } showMsg("ULTI ZEUS! -150!", P.x, P.y-30); }
+}
+function showMsg(t,x,y){ var m=document.getElementById("msg"); m.innerText=t; setTimeout(function(){ if(m.innerText==t) m.innerText=""; },800); }
+function loop(){
+  if(!gameOver){
+    // Gerak player
+    P.x+=jx*P.speed; P.y+=jy*P.speed;
+    P.x=Math.max(20,Math.min(cv.width-20,P.x)); P.y=Math.max(20,Math.min(cv.height-20,P.y));
+    // Cooldown
+    if(P.cd1>0) P.cd1-=0.016; if(P.cd2>0) P.cd2-=0.016; if(P.cd3>0) P.cd3-=0.016;
+    // Minion jalan ke musuh
+    for(var i=0;i<minions.length;i++){ var m=minions[i]; var target = m.team=="blue" ? {x:cv.width-50,y:200} : {x:50,y:200}; var dx=target.x-m.x, dy=target.y-m.y; var l=Math.hypot(dx,dy); if(l>10){ m.x+=dx/l*m.speed; m.y+=dy/l*m.speed; } }
+    // Enemy hero kejar player
+    for(var i=0;i<enemies.length;i++){ var e=enemies[i]; var dx=P.x-e.x, dy=P.y-e.y; var l=Math.hypot(dx,dy); if(l<250){ e.x+=dx/l*e.speed; e.y+=dy/l*e.speed; if(l<30){ P.hp-=0.3; } } else { e.x-=e.speed*0.5; } if(e.hp<=0){ enemies.splice(i,1); i--; P.kills++; P.gold+=120; } }
+    // Tower nyerang
+    for(var i=0;i<towers.length;i++){ var t=towers[i]; if(t.hp<=0) continue; var targets = t.team=="blue" ? minions.filter(m=>m.team=="red") : minions.concat([P]).filter(o=>o.team!="red" || o==P); if(t.team=="red" && dist(t,P)<100){ P.hp-=0.2; } }
+    // Minion vs Minion / Tower pukul-pukulan simpel
+    for(var i=0;i<minions.length;i++){ for(var j=0;j<minions.length;j++){ if(minions[i].team!=minions[j].team && dist(minions[i],minions[j])<20){ minions[j].hp-=0.1; } } if(minions[i].hp<=0){ minions.splice(i,1); i--; } }
+    // Cek Base
+    // Player attack ke base kalo deket (otomatis kalo pencet ATK)
+    // Enemy minion pukul base biru
+    for(var i=0;i<minions.length;i++){ var m=minions[i]; var b = m.team=="red" ? bases[0] : bases[1]; if(dist(m,b)<50){ b.hp-=0.2; } }
+    if(bases[1].hp<=0){ gameOver=true; document.getElementById("msg").innerHTML="🏆 VICTORY!<br><span style='font-size:16px'>LU MENANG! BASE MUSUH HANCUR!</span>"; }
+    if(bases[0].hp<=0 || P.hp<=0){ if(P.hp<=0){ P.hp=P.max; P.x=100; P.y=300; showMsg("LU MATI! RESPAWN!", P.x, P.y); } if(bases[0].hp<=0){ gameOver=true; document.getElementById("msg").innerHTML="💀 DEFEAT!<br><span style='font-size:16px'>Base lu hancur! Coba lagi!</span>"; } }
+    // HUD
+    document.getElementById("kills").innerText=P.kills;
+    document.getElementById("gold").innerText=P.gold;
+    document.getElementById("lv").innerText=P.lv;
+    document.getElementById("hpTxt").innerText=Math.floor(P.hp)+"/"+P.max;
+    var sec=Math.floor((Date.now()-startTime)/1000); document.getElementById("time").innerText=String(Math.floor(sec/60)).padStart(2,"0")+":"+String(sec%60).padStart(2,"0");
+  }
+  // GAMBAR
+  ctx.fillStyle="#1a3a1a"; ctx.fillRect(0,0,cv.width,cv.height);
+  ctx.fillStyle="#2a4a2a"; ctx.fillRect(0,150,cv.width,100); // Lane tengah
+  ctx.fillStyle="#8a6a00"; ctx.fillRect(0,190,cv.width,20); // Jalan
+  // Base
+  for(var i=0;i<bases.length;i++){ var b=bases[i]; ctx.fillStyle=b.team=="blue"?"#0066ff":"#ff0000"; ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,Math.PI*2); ctx.fill(); ctx.fillStyle="#fff"; ctx.font="12px Arial"; ctx.textAlign="center"; ctx.fillText("BASE",b.x,b.y-5); ctx.fillText(Math.floor(b.hp),b.x,b.y+10); }
+  // Tower
+  for(var i=0;i<towers.length;i++){ var t=towers[i]; if(t.hp<=0) continue; ctx.fillStyle=t.team=="blue"?"#00ccff":"#ff3333"; ctx.fillRect(t.x-15,t.y-15,30,30); ctx.fillStyle="#fff"; ctx.fillText("TOWER",t.x,t.y-20); ctx.fillStyle="red"; ctx.fillRect(t.x-15,t.y+20,30,4); ctx.fillStyle="lime"; ctx.fillRect(t.x-15,t.y+20,30*(t.hp/t.max),4); }
+  // Minion
+  for(var i=0;i<minions.length;i++){ var m=minions[i]; ctx.fillStyle=m.team=="blue"?"#66ccff":"#ff6666"; ctx.beginPath(); ctx.arc(m.x,m.y,8,0,Math.PI*2); ctx.fill(); ctx.fillStyle="#fff"; ctx.font="8px Arial"; ctx.fillText("M",m.x,m.y+3); }
+  // Enemy Hero
+  for(var i=0;i<enemies.length;i++){ var e=enemies[i]; ctx.fillStyle="#ff0000"; ctx.beginPath(); ctx.arc(e.x,e.y,16,0,Math.PI*2); ctx.fill(); ctx.fillStyle="#fff"; ctx.font="12px Arial"; ctx.fillText("😈",e.x,e.y+4); ctx.fillStyle="red"; ctx.fillRect(e.x-15,e.y-25,30,4); ctx.fillStyle="lime"; ctx.fillRect(e.x-15,e.y-25,30*(e.hp/e.max),4); }
+  // Player
+  ctx.fillStyle="#ffd700"; ctx.beginPath(); ctx.arc(P.x,P.y,18,0,Math.PI*2); ctx.fill(); ctx.fillStyle="#000"; ctx.font="bold 14px Arial"; ctx.fillText("⚡",P.x,P.y+5);
+  ctx.fillStyle="red"; ctx.fillRect(P.x-20,P.y-30,40,5); ctx.fillStyle="lime"; ctx.fillRect(P.x-20,P.y-30,40*(P.hp/P.max),5);
+  ctx.fillStyle="#fff"; ctx.font="11px Arial"; ctx.fillText("LV"+P.lv+" KOYAN",P.x,P.y-35);
+  requestAnimationFrame(loop);
+}
+init();
+loop();
+setTimeout(function(){ document.getElementById("msg").innerText=""; },3000);
+</script>
+</body>
+</html>
