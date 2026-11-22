@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SLOT KOYAN - MET93</title>
+<style>
+body{background:#111;color:white;text-align:center;font-family:sans-serif;padding:20px}
+h1{color:gold}
+.box{background:#222;padding:20px;border-radius:20px;max-width:350px;margin:auto;border:2px solid gold}
+.slot{font-size:55px;background:white;border-radius:15px;padding:15px;margin:10px 0}
+button{background:gold;border:none;padding:15px 30px;font-size:20px;font-weight:bold;border-radius:50px;margin-top:10px}
+#koin{font-size:22px;color:#00ff88}
+</style>
+</head>
+<body>
+<h1>🎰 SLOT KOYAN 🎰</h1>
+<p id="koin">💰 Koin: 1000</p>
+<div class="box">
+<div class="slot" id="slot">🍒 | 🍒 | 🍒</div>
+<p id="hasil">Pencet SPIN met!</p>
+<button onclick="spin()">SPIN!</button><br><br>
+<button onclick="tambah()" style="background:#00ff88;font-size:14px;padding:10px 20px">+ TAMBAH 500 KOIN GRATIS</button>
+</div>
+<p>By MET93 - No Judi, Cuma Seru-seruan!</p>
+<script>
+let koin=1000;
+let gambar=["🍒","🍋","🍇","⭐","💎","7️⃣","🔔"];
+function spin(){
+if(koin<100){document.getElementById("hasil").innerText="Koin habis! Pencet tombol hijau!";return;}
+koin-=100;
+let a=gambar[Math.floor(Math.random()*gambar.length)];
+let b=gambar[Math.floor(Math.random()*gambar.length)];
+let c=gambar[Math.floor(Math.random()*gambar.length)];
+document.getElementById("slot").innerText=a+" | "+b+" | "+c;
+let menang=0;
+if(a==b && b==c){menang=1000;document.getElementById("hasil").innerText="JACKPOT! +1000 🔥";}
+else if(a==b || b==c || a==c){menang=200;document.getElementById("hasil").innerText="Menang Kecil! +200 😎";}
+else{document.getElementById("hasil").innerText="Belum hoki, coba lagi!";}
+koin+=menang;
+document.getElementById("koin").innerText="💰 Koin: "+koin;
+}
+function tambah(){koin+=500;document.getElementById("koin").innerText="💰 Koin: "+koin;document.getElementById("hasil").innerText="Dapet 500 Koin Gratis!";}
+</script>
+</body>
+</html>
